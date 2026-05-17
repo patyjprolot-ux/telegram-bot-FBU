@@ -1,9 +1,14 @@
+import os                      # <-- ДОБАВИТЬ
 import telebot
 from telebot import types
 import time
 
 # --- НАЛАШТУВАННЯ ---
-TOKEN = '8823792673:AAEiixzymq-4oX2ajGqTW7rC_0qLwKlHF3A'
+
+TOKEN = os.getenv("TOKEN")    # <-- ЗАМЕНИТЬ ЭТУ СТРОКУ
+# БЫЛО:
+# TOKEN = 'ТУТ_БЫЛ_СТАРЫЙ_ТОКЕН'
+
 ADMIN_ID = 5012323355 
 bot = telebot.TeleBot(TOKEN)
 
@@ -95,46 +100,126 @@ def handle_query(call):
     bot.answer_callback_query(call.id)
 
     if call.data == 'captcha_ok' or call.data == 'restart_all' or call.data == 'back_to_main':
-        bot.edit_message_text("Вітаємо. Оберіть потрібний розділ:", call.message.chat.id, call.message.message_id, reply_markup=main_menu())
+        bot.edit_message_text(
+            "Вітаємо. Оберіть потрібний розділ:",
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=main_menu()
+        )
 
     elif call.data == 'menu_border':
         markup = types.InlineKeyboardMarkup(row_width=3)
-        btns = [types.InlineKeyboardButton(f"{i}", callback_data=f'final_border_{i}') for i in range(1, 10)]
+        btns = [
+            types.InlineKeyboardButton(
+                f"{i}",
+                callback_data=f'final_border_{i}'
+            ) for i in range(1, 10)
+        ]
         markup.add(*btns)
-        markup.add(types.InlineKeyboardButton("⬅️ Назад", callback_data='back_to_main'))
-        bot.edit_message_text(TEXT_BORDER, call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode='HTML')
+        markup.add(
+            types.InlineKeyboardButton(
+                "⬅️ Назад",
+                callback_data='back_to_main'
+            )
+        )
+
+        bot.edit_message_text(
+            TEXT_BORDER,
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup,
+            parse_mode='HTML'
+        )
 
     elif call.data == 'menu_bron':
         markup = types.InlineKeyboardMarkup(row_width=1)
+
         markup.add(
-            types.InlineKeyboardButton("📦 Весь пакет послуг", callback_data='final_bron_full'),
-            types.InlineKeyboardButton("🔍 Лише зняття з розшуку", callback_data='final_bron_search'),
-            types.InlineKeyboardButton("⬅️ Назад", callback_data='back_to_main')
+            types.InlineKeyboardButton(
+                "📦 Весь пакет послуг",
+                callback_data='final_bron_full'
+            ),
+
+            types.InlineKeyboardButton(
+                "🔍 Лише зняття з розшуку",
+                callback_data='final_bron_search'
+            ),
+
+            types.InlineKeyboardButton(
+                "⬅️ Назад",
+                callback_data='back_to_main'
+            )
         )
-        bot.edit_message_text(TEXT_BRON, call.message.chat.id, call.message.message_id, reply_markup=markup, parse_mode='HTML')
+
+        bot.edit_message_text(
+            TEXT_BRON,
+            call.message.chat.id,
+            call.message.message_id,
+            reply_markup=markup,
+            parse_mode='HTML'
+        )
 
     elif call.data.startswith('final_'):
+
         if check_spam_5min(call.from_user.id):
+
             res = call.data.replace('final_', '')
-            send_admin_notification(call.from_user, f"Вибір послуги: {res}")
-            bot.edit_message_text(WAIT_MESSAGE, call.message.chat.id, call.message.message_id)
+
+            send_admin_notification(
+                call.from_user,
+                f"Вибір послуги: {res}"
+            )
+
+            bot.edit_message_text(
+                WAIT_MESSAGE,
+                call.message.chat.id,
+                call.message.message_id
+            )
+
         else:
-            bot.send_message(call.message.chat.id, SPAM_WARNING, parse_mode='HTML')
+            bot.send_message(
+                call.message.chat.id,
+                SPAM_WARNING,
+                parse_mode='HTML'
+            )
 
     elif call.data == 'menu_other':
-        msg = bot.send_message(call.message.chat.id, "Будь ласка, напишіть своє запитання:")
-        bot.register_next_step_handler(msg, process_custom_question)
+
+        msg = bot.send_message(
+            call.message.chat.id,
+            "Будь ласка, напишіть своє запитання:"
+        )
+
+        bot.register_next_step_handler(
+            msg,
+            process_custom_question
+        )
 
 def process_custom_question(message):
+
     if message.text == '/start':
         start_cmd(message)
         return
         
     if check_spam_5min(message.from_user.id):
-        send_admin_notification(message.from_user, f"ЗАПИТАННЯ: {message.text}")
-        bot.send_message(message.chat.id, WAIT_MESSAGE)
+
+        send_admin_notification(
+            message.from_user,
+            f"ЗАПИТАННЯ: {message.text}"
+        )
+
+        bot.send_message(
+            message.chat.id,
+            WAIT_MESSAGE
+        )
+
     else:
-        bot.send_message(message.chat.id, SPAM_WARNING, parse_mode='HTML')
+        bot.send_message(
+            message.chat.id,
+            SPAM_WARNING,
+            parse_mode='HTML'
+        )
 
 if __name__ == '__main__':
     bot.infinity_polling()
+    
